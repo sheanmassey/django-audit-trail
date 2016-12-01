@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name = 'django-audit-trail',
-    packages = ['django-audit-trail'],
+    packages = ['django_audit'],
     version = '0.1',
     description = 'A simple audit log pattern for django apps that doesnt conflict with migrations',
     author = 'Shean Massey',
