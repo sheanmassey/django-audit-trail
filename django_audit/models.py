@@ -24,7 +24,11 @@ Let's split the model:
 
 
 class UserProfile(AbstractAuditModel):
-    current_revision = models.ForeignKey("UserProfileRevision", null=True, default=None)
+    current_revision = models.ForeignKey(
+        "UserProfileRevision", 
+        null=True, 
+        default=None
+    )
     user = models.ForeignKey(User, null=False)
 
 
@@ -45,9 +49,7 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.db import models
 
-
-# def nullable_fk(model_name):
-#     return models.ForeignKey(model_name, null=True, default=Non)
+from sets import Set
 
 
 def revision_attr(name):
@@ -119,6 +121,79 @@ class AbstractRevision(models.Model):
         self.tracked_model.current_revision = self
         self.tracked_model.save()
 
+    def values(self):
+        """
+        returns a dictionary of all fields and values
+        """
+        return self.__class__.objects.values().get(pk=self.pk)
+
+    def get_values(self):
+        """
+        returns a dictionary of fields which contains values
+        """
+        values_dict = self.__class__.objects.values().get(pk=self.pk)
+        d = {
+            k: v for k, v in zip(values_dict.keys(), values_dict.values())
+            if v is not None and v is not u''
+        }
+        return d
+
+    def get_empty_values(self):
+        """
+        returns a dictionary of fields which contain empty values
+        """
+        values_dict = self.__class__.objects.values().get(pk=self.pk)
+        d = {
+            k: v for k, v in zip(values_dict.keys(), values_dict.values())
+            if v is None or v is u''
+        }
+        return d
+
+    @staticmethod
+    def diff(rev_1, rev_2):
+        """
+        compare two revisions to one another, returns the set of differences
+        intersections, symmetrical_difference and
+        symmetrical_differences - differences
+
+        example:
+        >>> rev_1 = PatientRevision.objects.get(pk=1)
+        >>> rev_2 = PatientRevision.objects.get(pk=2)
+        >>> new_values, unchanged_values, changed_items, old_values = \
+        >>>     PatientRevision.diff_revsions(rev_1, rev_2)
+
+        """
+        assert isinstance(rev_1, AbstractRevision)
+        assert isinstance(rev_2, AbstractRevision)
+        if rev_1.created_at == rev_2.created_at:
+            print 'should not compare object to itself.'
+            return None
+
+        set_1 = Set((
+            (k, v) for k, v in zip(
+                rev_1.get_values().keys(),
+                rev_1.get_values().values()
+            )
+            if k != u'id' and k != u'created_at' and k != 'tracked_model_id'
+        ))
+        set_2 = Set((
+            (k, v) for k, v in zip(
+                rev_2.get_values().keys(),
+                rev_2.get_values().values()
+            )
+            if k != u'id' and k != u'created_at' and k != 'tracked_model_id'
+        ))
+
+        # new values
+        diff = set_1 - set_2    # elements in s but not in t
+        # common values
+        intersection = set_1 & set_2    # elements common to s and t
+        # pairs of changed values
+        sym_diff = set_1 ^ set_2    # elements in s and t but not in both
+        # changed values - set for consistency
+        mod = sym_diff - diff
+        return diff, intersection, sym_diff, mod
+
     class Meta:
         abstract = True
 
@@ -164,3 +239,7 @@ class AbstractAuditModel(models.Model):
     class Meta:
         abstract = True
 
+
+def get_field_names(model):
+    assert isinstance(model, models.Model)
+    return [f.name for f in model._meta.get_fields()]
