@@ -37,7 +37,10 @@ That all we need, now we can track all the changes to your UserProfile:
 
 profile = UserProfile.objects.create(
     user = user,
-    email_notifications = ...
+)
+
+profile.current_revision.email_notifications = ...
+profile.current_revision.save()
 """
 
 from __future__ import unicode_literals
