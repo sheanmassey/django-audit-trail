@@ -1,0 +1,9 @@
+*.pyc
+*.swp
+*~
+.idea/
+venv/
+.vagrant/
+Vagrantfile
+npm-debug.log
+node_modules/
