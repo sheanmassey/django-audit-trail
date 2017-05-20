@@ -52,8 +52,6 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.db import models
 
-from sets import Set
-
 
 def revision_attr(name):
     """
@@ -172,20 +170,20 @@ class AbstractRevision(models.Model):
             print 'should not compare object to itself.'
             return None
 
-        set_1 = Set((
+        set_1 = set(
             (k, v) for k, v in zip(
                 rev_1.get_values().keys(),
                 rev_1.get_values().values()
             )
             if k != u'id' and k != u'created_at' and k != 'tracked_model_id'
-        ))
-        set_2 = Set((
+        )
+        set_2 = set(
             (k, v) for k, v in zip(
                 rev_2.get_values().keys(),
                 rev_2.get_values().values()
             )
             if k != u'id' and k != u'created_at' and k != 'tracked_model_id'
-        ))
+        )
 
         # new values
         diff = set_1 - set_2    # elements in s but not in t
